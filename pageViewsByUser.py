@@ -68,12 +68,16 @@ for p in range(nrUnqPages):
 
 sortedByFreqOrd = np.argsort(freqPages)[::-1]
 
-print(pageTitles)
-print(unqPages)
-print('pageFreq', freqPages)
+# print(pageTitles)
+# print(unqPages)
+# print('pageFreq', freqPages)
 
 articlesChosen = unqPages[sortedByFreqOrd][:40]
+articlesChosen = ['_'.join(x.split(' ')) for x in articlesChosen]
 
+
+nrArticles = len(articlesChosen)
+print('nrArticles', nrArticles)
 print('articlesChosen', articlesChosen)
 # print(ads)
 
@@ -91,5 +95,29 @@ else:
   viewsRes = pickle.load(open('viewsRes.npz', 'rb'))['viewsRes']
 
 np.random.seed(2)
-# print(viewsRes)
-print([list(v.values()) for v in viewsRes.values()])
+print(viewsRes)
+valListOfList = [list(v.values()) for v in viewsRes.values()]
+filteredList = [[x for x in l if x is not None] for l in valListOfList ]
+print('valListOfList', valListOfList)
+print('filteredList', filteredList)
+print(np.sum([np.sum(l) for l in filteredList]))
+
+nrMonths = 12
+viewsMatAM = np.zeros((nrArticles, nrMonths), float)
+
+for mStamp in viewsRes.keys():
+  currMonth = mStamp.month-1
+  for article in viewsRes[mStamp].keys():
+    # print('article', article)
+    # print(articlesChosen.index(article))
+    artIndex = articlesChosen.index(article)
+    # print(articlesChosen[artIndex])
+    if viewsRes[mStamp][article] is not None:
+      viewsMatAM[artIndex,currMonth] += viewsRes[mStamp][article]
+
+
+print('-------------------')
+sortedByViewsind = np.argsort(np.sum(viewsMatAM,axis=1))[::-1]
+
+for a in range(nrArticles):
+  print(articlesChosen[sortedByViewsind[a]], np.sum(viewsMatAM[sortedByViewsind[a],:]))
