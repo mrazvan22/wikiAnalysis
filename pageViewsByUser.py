@@ -21,7 +21,7 @@ nrYears = len(yearsList)
 
 months = [1,7,12]
 
-runPart = ['L', 'L']
+runPart = ['L', 'R']
 
 if runPart[0] == 'R':
   # for y in [6]: #range(nrYears):
@@ -52,33 +52,38 @@ if runPart[0] == 'R':
 else:
   userContribs = pickle.load(open('userContribs.npz', 'rb'))['userContribs']
 
-print('userContribs', len(userContribs))
+# print('userContribs', len(userContribs), userContribs)
 # print(asda)
+# print('pageTitles', [c['title'] for c in userContribs ])
 pageTitles = [c['title'] for c in userContribs if 'minor' not in c.keys()]
-
+# print('-------------\n\n\n\n')
+# print('pageTitles', [c['title'] for c in userContribs ])
+# print(adsa)
 
 from itertools import groupby
 # pageGroups = groupby(pageTitles)
 # pageFreq = {}
 unqPages = np.unique(pageTitles)
 nrUnqPages = len(unqPages)
-freqPages = np.zeros(nrUnqPages)
+nrChangesByMeToEachPage = np.zeros(nrUnqPages)
 for p in range(nrUnqPages):
-  freqPages[p] = len([x for x in pageTitles if x == unqPages[p]])
+  nrChangesByMeToEachPage[p] = len([x for x in pageTitles if x == unqPages[p]])
 
-sortedByFreqOrd = np.argsort(freqPages)[::-1]
+sortedByFreqOrd = np.argsort(nrChangesByMeToEachPage)[::-1]
 
 # print(pageTitles)
 # print(unqPages)
 # print('pageFreq', freqPages)
+print(unqPages[sortedByFreqOrd])
+# print(asda)
 
-articlesChosen = unqPages[sortedByFreqOrd][:40]
-articlesChosen = ['_'.join(x.split(' ')) for x in articlesChosen]
+articlesWithMostChangesByMe = unqPages[sortedByFreqOrd][:40]
+articlesWithMostChangesByMe = ['_'.join(x.split(' ')) for x in articlesWithMostChangesByMe]
 
 
-nrArticles = len(articlesChosen)
+nrArticles = len(articlesWithMostChangesByMe)
 print('nrArticles', nrArticles)
-print('articlesChosen', articlesChosen)
+print('articlesChosen', articlesWithMostChangesByMe)
 # print(ads)
 
 startDate = '20170101' # 1st jan
@@ -86,8 +91,8 @@ endDate = None # defaults to today
 granularity = 'monthly'
 
 if runPart[1] == 'R':
-  viewsRes = client.article_views('ro.wikipedia', articlesChosen, access='all-access',
-    agent='all-agents', granularity=granularity, start=startDate, end=endDate)
+  viewsRes = client.article_views('ro.wikipedia', articlesWithMostChangesByMe, access= 'all-access',
+                                  agent='all-agents', granularity=granularity, start=startDate, end=endDate)
 
   ds = dict(viewsRes=viewsRes)
   pickle.dump(ds, open('viewsRes.npz', 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
@@ -97,6 +102,7 @@ else:
 np.random.seed(2)
 print(viewsRes)
 valListOfList = [list(v.values()) for v in viewsRes.values()]
+print('viewsRes', viewsRes)
 filteredList = [[x for x in l if x is not None] for l in valListOfList ]
 print('valListOfList', valListOfList)
 print('filteredList', filteredList)
@@ -110,7 +116,7 @@ for mStamp in viewsRes.keys():
   for article in viewsRes[mStamp].keys():
     # print('article', article)
     # print(articlesChosen.index(article))
-    artIndex = articlesChosen.index(article)
+    artIndex = articlesWithMostChangesByMe.index(article)
     # print(articlesChosen[artIndex])
     if viewsRes[mStamp][article] is not None:
       viewsMatAM[artIndex,currMonth] += viewsRes[mStamp][article]
@@ -119,5 +125,5 @@ for mStamp in viewsRes.keys():
 print('-------------------')
 sortedByViewsind = np.argsort(np.sum(viewsMatAM,axis=1))[::-1]
 
-for a in range(nrArticles):
-  print(articlesChosen[sortedByViewsind[a]], np.sum(viewsMatAM[sortedByViewsind[a],:]))
+for a in range(nrArticles ):
+  print(articlesWithMostChangesByMe[sortedByViewsind[a]], np.sum(viewsMatAM[sortedByViewsind[a], :]))
